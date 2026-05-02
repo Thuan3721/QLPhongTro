@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Tạo hợp đồng mới";
+    var phongList = ViewBag.PhongList as List<HeThongQuanLyPhongTro.Models.Phong>;
+    var khachHangList = ViewBag.KhachHangList as List<HeThongQuanLyPhongTro.Models.KhachHang>;
+}
+
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+            <h1 class="text-xl font-bold text-white">Tạo hợp đồng thuê phòng</h1>
+            <p class="text-blue-100 text-sm">Nhập thông tin hợp đồng mới</p>
+        </div>
+
+        <form asp-action="Create" method="post" class="p-6 space-y-4">
+            @Html.AntiForgeryToken()
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn phòng <span class="text-red-500">*</span></label>
+                    <select name="maPhong" id="maPhong" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <option value="">-- Chọn phòng --</option>
+                        @foreach (var phong in phongList ?? new List<HeThongQuanLyPhongTro.Models.Phong>())
+                        {
+                            <option value="@phong.MaPhong" data-gia="@phong.GiaPhong" data-dientich="@phong.DienTich" data-coso="@phong.CoSo?.TenCoSo">
+                                @phong.TenPhong - @phong.CoSo?.TenCoSo - @phong.GiaPhong.ToString("N0") đ/tháng
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn khách hàng <span class="text-red-500">*</span></label>
+                    <select name="maKhachHang" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <option value="">-- Chọn khách hàng --</option>
+                        @foreach (var khach in khachHangList ?? new List<HeThongQuanLyPhongTro.Models.KhachHang>())
+                        {
+                            <option value="@khach.MaKhachHang">@khach.HoTen - @khach.SoDienThoai</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div id="phongInfo" class="bg-blue-50 p-4 rounded-lg hidden">
+                <h4 class="font-semibold text-blue-800 mb-2">Thông tin phòng</h4>
+                <div class="grid grid-cols-3 gap-4 text-sm">
+                    <div><span class="text-gray-600">Giá phòng:</span> <span id="giaPhong" class="font-semibold text-blue-600"></span></div>
+                    <div><span class="text-gray-600">Diện tích:</span> <span id="dienTich"></span></div>
+                    <div><span class="text-gray-600">Cơ sở:</span> <span id="tenCoSo"></span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày bắt đầu <span class="text-red-500">*</span></label>
+                    <input type="date" name="ngayBatDau" value="@DateTime.Now.ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border rounded-lg" required />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày kết thúc <span class="text-red-500">*</span></label>
+                    <input type="date" name="ngayKetThuc" value="@DateTime.Now.AddMonths(6).ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border rounded-lg" required />
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tiền cọc (VNĐ) <span class="text-red-500">*</span></label>
+                <input type="number" name="tienCoc" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập số tiền cọc" required />
+                <p class="text-xs text-gray-500 mt-1">Thông thường = 1-3 tháng tiền phòng</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4">
+                <a asp-action="Index" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</a>
+                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    <i class="fas fa-save mr-2"></i> Tạo hợp đồng
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('maPhong').addEventListener('change', function() {
+        var selected = this.options[this.selectedIndex];
+        var gia = selected.getAttribute('data-gia');
+        var dientich = selected.getAttribute('data-dientich');
+        var coso = selected.getAttribute('data-coso');
+
+        if (gia) {
+            document.getElementById('phongInfo').classList.remove('hidden');
+            document.getElementById('giaPhong').innerText = new Intl.NumberFormat('vi-VN').format(gia) + ' đ/tháng';
+            document.getElementById('dienTich').innerText = dientich + ' m²';
+            document.getElementById('tenCoSo').innerText = coso;
+        } else {
+            document.getElementById('phongInfo').classList.add('hidden');
+        }
+    });
+</script>

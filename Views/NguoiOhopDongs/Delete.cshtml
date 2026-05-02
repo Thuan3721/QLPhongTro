@@ -1,0 +1,71 @@
+﻿@model HeThongQuanLyPhongTro.Models.NguoiOHopDong
+
+@{
+    ViewData["Title"] = "Xóa người ở";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+                    <h1 class="text-xl font-bold text-white">Xóa người ở</h1>
+                    <p class="text-red-100 text-sm">Bạn có chắc chắn muốn xóa?</p>
+                </div>
+
+                <div class="p-6">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-triangle text-yellow-400 text-xl mr-3"></i>
+                            <p class="text-yellow-700">Hành động này không thể khôi phục!</p>
+                        </div>
+                    </div>
+
+                    <dl class="grid grid-cols-2 gap-3 mb-6">
+                        <div class="bg-gray-50 p-3 rounded">
+                            <dt class="text-gray-500 text-sm">Mã</dt>
+                            <dd class="font-semibold">@Model.MaNguoiO</dd>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <dt class="text-gray-500 text-sm">Hợp đồng</dt>
+                            <dd class="font-semibold">@Model.HopDongNavigation?.MaHopDong</dd>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <dt class="text-gray-500 text-sm">Họ tên</dt>
+                            <dd class="font-semibold">@Model.HoTen</dd>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <dt class="text-gray-500 text-sm">CCCD</dt>
+                            <dd class="font-semibold">@Model.CCCD</dd>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <dt class="text-gray-500 text-sm">Số điện thoại</dt>
+                            <dd class="font-semibold">@Model.SoDienThoai</dd>
+                        </div>
+                    </dl>
+
+                    <form asp-action="Delete" class="flex justify-end space-x-3">
+                        <input type="hidden" name="id" value="@Model.MaNguoiO" />
+                        <a asp-action="Index" class="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all">Hủy</a>
+                        <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all">
+                            <i class="fas fa-trash mr-2"></i> Xóa
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

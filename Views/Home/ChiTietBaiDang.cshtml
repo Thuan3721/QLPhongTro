@@ -1,0 +1,97 @@
+﻿@model HeThongQuanLyPhongTro.Models.BaiDang
+
+@{
+    Layout = null;
+    ViewData["Title"] = Model?.TieuDe ?? "Chi tiết bài đăng";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <a href="@Url.Action("Index", "Home")" class="flex items-center space-x-3">
+                    <i class="fas fa-home text-2xl text-blue-500"></i>
+                    <span class="text-xl font-bold text-gray-800">Phòng Trọ Xinh</span>
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="text-gray-600 hover:text-blue-500">
+                    <i class="fas fa-arrow-left mr-1"></i> Quay lại
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            @if (Model == null)
+            {
+                <div class="bg-red-100 text-red-700 p-4 rounded-lg text-center">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p>Không tìm thấy bài đăng!</p>
+                    <a href="@Url.Action("Index", "Home")" class="text-blue-500 hover:underline">Về trang chủ</a>
+                </div>
+            }
+            else
+            {
+                <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                    @if (!string.IsNullOrEmpty(Model.HinhAnh))
+                    {
+                        <img src="@Model.HinhAnh" alt="@Model.TieuDe" class="w-full h-96 object-cover">
+                    }
+                    else
+                    {
+                        <div class="w-full h-64 bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
+                            <i class="fas fa-home text-white text-6xl"></i>
+                        </div>
+                    }
+
+                    <div class="p-6">
+                        <h1 class="text-2xl font-bold text-gray-800 mb-4">@Model.TieuDe</h1>
+
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-500 text-sm">Phòng</p>
+                                <p class="font-semibold">@(Model.PhongNavigation?.TenPhong ?? "N/A")</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-500 text-sm">Cơ sở</p>
+                                <p class="font-semibold">@(Model.PhongNavigation?.CoSo?.TenCoSo ?? "N/A")</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-500 text-sm">Giá phòng</p>
+                                <p class="text-2xl font-bold text-blue-600">@(Model.PhongNavigation?.GiaPhong.ToString("N0") ?? "0") đ/tháng</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg">
+                                <p class="text-gray-500 text-sm">Diện tích</p>
+                                <p class="font-semibold">@(Model.PhongNavigation?.DienTich?.ToString() ?? "N/A") m²</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <h3 class="font-bold text-lg mb-3">Mô tả chi tiết</h3>
+                            <div class="text-gray-700 whitespace-pre-line">@(Model.MoTa ?? "Chưa có mô tả")</div>
+                        </div>
+
+                        <div class="mt-6 bg-yellow-50 rounded-lg p-4">
+                            <p class="text-yellow-800">
+                                <i class="fas fa-phone-alt mr-2"></i>
+                                Liên hệ ngay: <strong>0987 654 321</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+</body>
+</html>

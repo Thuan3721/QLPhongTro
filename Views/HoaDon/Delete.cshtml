@@ -1,0 +1,53 @@
+﻿@model HeThongQuanLyPhongTro.Models.HoaDon
+
+@{
+    ViewData["Title"] = "Xóa hóa đơn";
+}
+
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4">
+            <h1 class="text-xl font-bold text-white">Xóa hóa đơn</h1>
+            <p class="text-red-100">Bạn có chắc chắn muốn xóa hóa đơn này?</p>
+        </div>
+
+        <div class="p-6">
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 text-xl mr-3"></i>
+                    <p class="text-yellow-700">Hành động này không thể khôi phục!</p>
+                </div>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-gray-50 p-3 rounded">
+                    <dt class="text-gray-500 text-sm">Mã hóa đơn</dt>
+                    <dd class="font-semibold">HD@Model.MaHoaDon</dd>
+                </div>
+                <div class="bg-gray-50 p-3 rounded">
+                    <dt class="text-gray-500 text-sm">Phòng</dt>
+                    <dd class="font-semibold">@(Model.HopDongNavigation?.PhongNavigation?.TenPhong ?? "N/A")</dd>
+                </div>
+                <div class="bg-gray-50 p-3 rounded">
+                    <dt class="text-gray-500 text-sm">Tháng/Năm</dt>
+                    <dd class="font-semibold">@Model.Thang/@Model.Nam</dd>
+                </div>
+                <div class="bg-gray-50 p-3 rounded">
+                    <dt class="text-gray-500 text-sm">Tổng tiền</dt>
+                    <dd class="font-semibold text-red-600">@(Model.TongTien?.ToString("N0") ?? "0") đ</dd>
+                </div>
+            </dl>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.MaHoaDon" />
+                <div class="flex justify-end space-x-3">
+                    <a asp-action="Index" class="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-all">Hủy</a>
+                    <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all">
+                        <i class="fas fa-trash mr-2"></i> Xóa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
