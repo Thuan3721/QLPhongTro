@@ -1,0 +1,170 @@
+﻿@model IEnumerable<HeThongQuanLyPhongTro.Models.HoaDon>
+
+@{
+    ViewData["Title"] = "Quản lý hóa đơn";
+}
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Quản lý hóa đơn</h1>
+            <p class="text-gray-500 mt-1">Danh sách hóa đơn tiền phòng</p>
+        </div>
+        <div class="flex gap-2">
+            <a asp-action="TaoHangLoat" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-all">
+                <i class="fas fa-plus-circle mr-2"></i> Tạo hàng loạt
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded">
+            <i class="fas fa-check-circle mr-2"></i> @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+            <i class="fas fa-exclamation-circle mr-2"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- Bộ lọc -->
+    <div class="bg-white rounded-xl shadow-md p-4">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <input type="text" name="searchString" value="@ViewBag.SearchString"
+                   placeholder="Tìm theo tên KH, phòng..."
+                   class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <select name="thang" class="px-3 py-2 border rounded-lg">
+                <option value="">-- Tháng --</option>
+                @for (int i = 1; i <= 12; i++)
+                {
+                    if (ViewBag.Thang == i)
+                    {
+                        <option value="@i" selected>Tháng @i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">Tháng @i</option>
+                    }
+                }
+            </select>
+
+            <select name="nam" class="px-3 py-2 border rounded-lg">
+                <option value="">-- Năm --</option>
+                @foreach (var nam in ViewBag.NamList as List<int> ?? new List<int>())
+                {
+                    if (ViewBag.Nam == nam)
+                    {
+                        <option value="@nam" selected>@nam</option>
+                    }
+                    else
+                    {
+                        <option value="@nam">@nam</option>
+                    }
+                }
+            </select>
+
+            <select name="trangThai" class="px-3 py-2 border rounded-lg">
+                @foreach (var trangThaiItem in ViewBag.TrangThaiList)
+                {
+                    if (ViewBag.TrangThai == trangThaiItem)
+                    {
+                        <option value="@trangThaiItem" selected>@trangThaiItem</option>
+                    }
+                    else
+                    {
+                        <option value="@trangThaiItem">@trangThaiItem</option>
+                    }
+                }
+            </select>
+
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                <i class="fas fa-search mr-2"></i> Lọc
+            </button>
+        </form>
+    </div>
+
+    <!-- Bảng hóa đơn -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã HĐ</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phòng</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khách hàng</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tháng/Năm</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tổng tiền</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var item in Model)
+                    {
+                        <tr class="hover:bg-gray-50 transition-all">
+                            <td class="px-4 py-3 font-medium">HD@item.MaHoaDon</td>
+                            <td class="px-4 py-3">@(item.HopDongNavigation?.PhongNavigation?.TenPhong ?? "N/A")</td>
+                            <td class="px-4 py-3">@(item.HopDongNavigation?.KhachHangNavigation?.HoTen ?? "N/A")</td>
+                            <td class="px-4 py-3">@item.Thang/@item.Nam</td>
+                            <td class="px-4 py-3 text-right font-semibold">@(item.TongTien?.ToString("N0") ?? "0") đ</td>
+                            <td class="px-4 py-3 text-center">
+                                @if (item.TrangThai == "Đã thanh toán")
+                                {
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                        <i class="fas fa-check-circle"></i> Đã thanh toán
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                                        <i class="fas fa-clock"></i> Chưa thanh toán
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <a asp-action="Details" asp-route-id="@item.MaHoaDon"
+                                       class="text-blue-500 hover:text-blue-700" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (item.TrangThai == "Chưa thanh toán")
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.MaHoaDon"
+                                           class="text-yellow-500 hover:text-yellow-700" title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.MaHoaDon"
+                                           class="text-red-500 hover:text-red-700" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-300" title="Đã thanh toán, không thể sửa/xóa">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-12">
+                <i class="fas fa-receipt text-gray-300 text-5xl mb-3"></i>
+                <p class="text-gray-500">Không có hóa đơn nào</p>
+            </div>
+        }
+    </div>
+</div>

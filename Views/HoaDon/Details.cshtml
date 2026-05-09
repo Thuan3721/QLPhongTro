@@ -1,0 +1,356 @@
+﻿@model HeThongQuanLyPhongTro.Models.HoaDon
+
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+    var chiTietHoaDons = ViewBag.ChiTietHoaDons as List<HeThongQuanLyPhongTro.Models.ChiTietHoaDon>;
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-white">Chi tiết hóa đơn</h1>
+                    <p class="text-purple-100">Mã hóa đơn: HD@Model.MaHoaDon</p>
+                </div>
+                <a asp-action="Index" class="text-white hover:text-purple-200 transition-all">
+                    <i class="fas fa-arrow-left mr-2"></i> Quay lại
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <!-- Thông tin chung -->
+            <div class="bg-gray-50 rounded-lg p-5 mb-6">
+                <h3 class="font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    Thông tin hóa đơn
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Phòng</p>
+                        <p class="font-semibold">@(Model.HopDongNavigation?.PhongNavigation?.TenPhong ?? "N/A")</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Khách hàng</p>
+                        <p class="font-semibold">@(Model.HopDongNavigation?.KhachHangNavigation?.HoTen ?? "N/A")</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Tháng/Năm</p>
+                        <p class="font-semibold text-blue-600">@Model.Thang/@Model.Nam</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Trạng thái</p>
+                        @if (Model.TrangThai == "Đã thanh toán")
+                        {
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                <i class="fas fa-check-circle"></i> Đã thanh toán
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                                <i class="fas fa-clock"></i> Chưa thanh toán
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM TÍNH TIỀN -->
+            @if (Model.TrangThai == "Chưa thanh toán")
+            {
+                <div class="bg-blue-50 rounded-lg p-5 mb-6 border border-blue-200">
+                    <h3 class="font-semibold text-blue-800 mb-3 flex items-center">
+                        <i class="fas fa-calculator mr-2"></i>
+                        Tính tiền dịch vụ & phát sinh
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Số người ở</label>
+                            <input type="number" id="soNguoi" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập số người" value="1" min="1" />
+                            <p class="text-xs text-gray-500 mt-1">Phí dịch vụ: 200,000đ/người</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tiền điện</label>
+                            <input type="number" id="tienDien" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập tiền điện" value="0" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tiền nước</label>
+                            <input type="number" id="tienNuoc" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập tiền nước" value="0" />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Chi phí phát sinh</label>
+                            <input type="number" id="chiPhiPhatSinh" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập chi phí phát sinh" value="0" />
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú phát sinh</label>
+                            <input type="text" id="ghiChuPhatSinh" class="w-full px-3 py-2 border rounded-lg" placeholder="VD: Sửa điều hòa, thay bóng đèn..." />
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <button type="button" id="btnTinhTien" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+                            <i class="fas fa-calculator mr-2"></i> TÍNH TIỀN
+                        </button>
+                    </div>
+
+                    <div id="ketQuaTinhTien" class="mt-4" style="display: none;">
+                        <div class="bg-white rounded-lg p-4">
+                            <h4 class="font-bold text-gray-700 mb-2">CHI TIẾT HÓA ĐƠN</h4>
+                            <table class="w-full text-sm">
+                                <tr class="border-b">
+                                    <td class="py-1">Tiền phòng:</td>
+                                    <td class="py-1 text-right font-semibold">
+                                        <span id="tienPhong">@(Model.TongTien?.ToString("N0") ?? "0")</span> đ
+                                    </td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-1">Phí dịch vụ (<span id="soNguoiHienThi">0</span> người × 200,000đ):</td>
+                                    <td class="py-1 text-right">
+                                        <span id="phiDichVu">0</span> đ
+                                    </td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-1">Tiền điện:</td>
+                                    <td class="py-1 text-right">
+                                        <span id="tienDienHienThi">0</span> đ
+                                    </td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-1">Tiền nước:</td>
+                                    <td class="py-1 text-right">
+                                        <span id="tienNuocHienThi">0</span> đ
+                                    </td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="py-1">Chi phí phát sinh:</td>
+                                    <td class="py-1 text-right">
+                                        <span id="chiPhiPhatSinhHienThi">0</span> đ
+                                    </td>
+                                </tr>
+                                <tr class="border-b border-t-2">
+                                    <td class="py-2 font-bold text-blue-600">TỔNG CỘNG:</td>
+                                    <td class="py-2 text-right font-bold text-blue-600 text-lg">
+                                        <span id="tongCong">0</span> đ
+                                    </td>
+                                </tr>
+                            </table>
+                            <p id="ghiChuHienThi" class="text-xs text-gray-500 mt-2 italic"></p>
+
+                            <div class="mt-3">
+                                <button type="button" id="btnCapNhatHoaDon" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                                    <i class="fas fa-save mr-2"></i> CẬP NHẬT HÓA ĐƠN
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Chi tiết các khoản thu -->
+            <div class="mb-6">
+                <h3 class="font-semibold text-gray-700 mb-3 flex items-center">
+                    <i class="fas fa-list-ul text-green-500 mr-2"></i>
+                    Các khoản thu hiện tại
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full border rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-sm">Khoản thu</th>
+                                <th class="px-4 py-2 text-right text-sm">Số lượng</th>
+                                <th class="px-4 py-2 text-right text-sm">Đơn giá</th>
+                                <th class="px-4 py-2 text-right text-sm">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (chiTietHoaDons != null && chiTietHoaDons.Any())
+                            {
+                                @foreach (var item in chiTietHoaDons)
+                                {
+                                    <tr class="border-b">
+                                        <td class="px-4 py-2">@item.LoaiKhoanThu</td>
+                                        <td class="px-4 py-2 text-right">@(item.SoLuong?.ToString() ?? "0")</td>
+                                        <td class="px-4 py-2 text-right">@(item.DonGia?.ToString("N0") ?? "0") đ</td>
+                                        <td class="px-4 py-2 text-right">@(item.ThanhTien?.ToString("N0") ?? "0") đ</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr class="border-b">
+                                    <td class="px-4 py-2">Tiền phòng</td>
+                                    <td class="px-4 py-2 text-right">1</td>
+                                    <td class="px-4 py-2 text-right">@(Model.HopDongNavigation?.PhongNavigation?.GiaPhong.ToString("N0") ?? "0") đ</td>
+                                    <td class="px-4 py-2 text-right">@(Model.TongTien?.ToString("N0") ?? "0") đ</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td colspan="3" class="px-4 py-2 text-right font-bold">Tổng cộng hiện tại:</td>
+                                <td class="px-4 py-2 text-right font-bold text-blue-600">@(Model.TongTien?.ToString("N0") ?? "0") đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Form thanh toán -->
+            @if (Model.TrangThai == "Chưa thanh toán")
+            {
+                <div class="bg-yellow-50 rounded-lg p-5 border border-yellow-200">
+                    <h3 class="font-semibold text-yellow-800 mb-3 flex items-center">
+                        <i class="fas fa-money-bill-wave mr-2"></i>
+                        Thanh toán hóa đơn
+                    </h3>
+                    <form asp-action="ThanhToan" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.MaHoaDon" />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Số tiền thanh toán</label>
+                                <input type="number" name="soTien" id="soTienThanhToan" value="@Model.TongTien" class="w-full px-3 py-2 border rounded-lg" required />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung</label>
+                                <input type="text" name="noiDung" value="Thanh toán tiền phòng tháng @Model.Thang/@Model.Nam" class="w-full px-3 py-2 border rounded-lg" />
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600">
+                                <i class="fas fa-check-circle mr-2"></i> Xác nhận thanh toán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="bg-green-50 rounded-lg p-5 text-center border border-green-200">
+                    <i class="fas fa-check-circle text-green-500 text-3xl mb-2"></i>
+                    <p class="text-green-700 font-semibold">Hóa đơn đã được thanh toán</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    const soNguoi = document.getElementById('soNguoi');
+    const tienDien = document.getElementById('tienDien');
+    const tienNuoc = document.getElementById('tienNuoc');
+    const chiPhiPhatSinh = document.getElementById('chiPhiPhatSinh');
+    const ghiChuPhatSinh = document.getElementById('ghiChuPhatSinh');
+    const btnTinhTien = document.getElementById('btnTinhTien');
+    const ketQuaTinhTien = document.getElementById('ketQuaTinhTien');
+    const btnCapNhatHoaDon = document.getElementById('btnCapNhatHoaDon');
+    const soTienThanhToan = document.getElementById('soTienThanhToan');
+
+    const giaPhong = @(Model.TongTien ?? 0);
+    const donGiaDichVu = 200000;
+
+    function tinhTongTien() {
+        let soNguoiValue = parseInt(soNguoi.value) || 0;
+        let tienDienValue = parseFloat(tienDien.value) || 0;
+        let tienNuocValue = parseFloat(tienNuoc.value) || 0;
+        let chiPhiPhatSinhValue = parseFloat(chiPhiPhatSinh.value) || 0;
+
+        let phiDichVu = soNguoiValue * donGiaDichVu;
+        let tongCong = giaPhong + phiDichVu + tienDienValue + tienNuocValue + chiPhiPhatSinhValue;
+
+        document.getElementById('soNguoiHienThi').innerText = soNguoiValue;
+        document.getElementById('phiDichVu').innerText = phiDichVu.toLocaleString('vi-VN');
+        document.getElementById('tienDienHienThi').innerText = tienDienValue.toLocaleString('vi-VN');
+        document.getElementById('tienNuocHienThi').innerText = tienNuocValue.toLocaleString('vi-VN');
+        document.getElementById('chiPhiPhatSinhHienThi').innerText = chiPhiPhatSinhValue.toLocaleString('vi-VN');
+        document.getElementById('tongCong').innerText = tongCong.toLocaleString('vi-VN');
+
+        let ghiChu = ghiChuPhatSinh.value.trim();
+        if (ghiChu) {
+            document.getElementById('ghiChuHienThi').innerHTML = '<i class="fas fa-sticky-note"></i> Ghi chú: ' + ghiChu;
+        } else {
+            document.getElementById('ghiChuHienThi').innerHTML = '';
+        }
+
+        if (soTienThanhToan) {
+            soTienThanhToan.value = tongCong;
+        }
+
+        return tongCong;
+    }
+
+    if (btnTinhTien) {
+        btnTinhTien.addEventListener('click', function() {
+            tinhTongTien();
+            ketQuaTinhTien.style.display = 'block';
+            ketQuaTinhTien.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
+    if (btnCapNhatHoaDon) {
+        btnCapNhatHoaDon.addEventListener('click', async function() {
+            let soNguoiValue = parseInt(soNguoi.value) || 0;
+            let tienDienValue = parseFloat(tienDien.value) || 0;
+            let tienNuocValue = parseFloat(tienNuoc.value) || 0;
+            let chiPhiPhatSinhValue = parseFloat(chiPhiPhatSinh.value) || 0;
+            let ghiChuValue = ghiChuPhatSinh.value || "";
+            let phiDichVu = soNguoiValue * donGiaDichVu;
+            let tongCong = giaPhong + phiDichVu + tienDienValue + tienNuocValue + chiPhiPhatSinhValue;
+
+            btnCapNhatHoaDon.disabled = true;
+            btnCapNhatHoaDon.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang cập nhật...';
+
+            try {
+                const response = await fetch('@Url.Action("CapNhatHoaDon", "HoaDon")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({
+                        maHoaDon: @Model.MaHoaDon,
+                        soNguoi: soNguoiValue,
+                        tienDien: tienDienValue,
+                        tienNuoc: tienNuocValue,
+                        chiPhiPhatSinh: chiPhiPhatSinhValue,
+                        ghiChu: ghiChuValue,
+                        tongCong: tongCong
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Cập nhật hóa đơn thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            } catch (error) {
+                alert('Lỗi kết nối!');
+            } finally {
+                btnCapNhatHoaDon.disabled = false;
+                btnCapNhatHoaDon.innerHTML = '<i class="fas fa-save mr-2"></i> CẬP NHẬT HÓA ĐƠN';
+            }
+        });
+    }
+
+    const inputs = [soNguoi, tienDien, tienNuoc, chiPhiPhatSinh];
+    if (inputs.every(i => i !== null)) {
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (ketQuaTinhTien && ketQuaTinhTien.style.display === 'block') {
+                    tinhTongTien();
+                }
+            });
+        });
+    }
+</script>
