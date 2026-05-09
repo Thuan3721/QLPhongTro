@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using OfficeOpenXml;
 using System.IO;
 using System.Linq;
-// ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
 namespace HeThongQuanLyPhongTro.Controllers
 {
     public class PhongController : Controller
@@ -20,6 +19,7 @@ namespace HeThongQuanLyPhongTro.Controllers
             _context = context;
             _webHostEnvironment = webHostEnvironment;
         }
+
         // GET: Danh sách phòng
         public async Task<IActionResult> Index(string searchString, string trangThai)
         {
@@ -209,57 +209,6 @@ namespace HeThongQuanLyPhongTro.Controllers
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        // Export danh sách phòng ra Excel
-        public async Task<IActionResult> ExportExcel()
-        {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-            var phongs = await _context.Phong
-                .Include(p => p.CoSo)
-                .ToListAsync();
-
-            using (var package = new ExcelPackage())
-            {
-                var worksheet = package.Workbook.Worksheets.Add("Danh sách phòng");
-
-                worksheet.Cells[1, 1].Value = "Mã phòng";
-                worksheet.Cells[1, 2].Value = "Tên phòng";
-                worksheet.Cells[1, 3].Value = "Cơ sở";
-                worksheet.Cells[1, 4].Value = "Giá phòng";
-                worksheet.Cells[1, 5].Value = "Diện tích";
-                worksheet.Cells[1, 6].Value = "Trạng thái";
-
-                using (var range = worksheet.Cells[1, 1, 1, 6])
-                {
-                    range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
-                }
-
-                int row = 2;
-                foreach (var phong in phongs)
-                {
-                    worksheet.Cells[row, 1].Value = phong.MaPhong;
-                    worksheet.Cells[row, 2].Value = phong.TenPhong;
-                    worksheet.Cells[row, 3].Value = phong.CoSo?.TenCoSo;
-                    worksheet.Cells[row, 4].Value = phong.GiaPhong;
-                    worksheet.Cells[row, 4].Style.Numberformat.Format = "#,##0";
-                    worksheet.Cells[row, 5].Value = phong.DienTich;
-                    worksheet.Cells[row, 6].Value = phong.TrangThai;
-                    row++;
-                }
-
-                worksheet.Cells.AutoFitColumns();
-
-                var stream = new MemoryStream();
-                package.SaveAs(stream);
-                stream.Position = 0;
-
-                var fileName = $"DanhSachPhong_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-            }
         }
 
         private bool PhongExists(int id)

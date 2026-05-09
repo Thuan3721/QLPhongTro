@@ -1,124 +1,134 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using HeThongQuanLyPhongTro.Data;
 using HeThongQuanLyPhongTro.Models;
-using HeThongQuanLyPhongTro.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HeThongQuanLyPhongTro.Controllers
 {
-    public class NguoiOHopDongsController : Controller
+    public class NguoiOHopDongController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public NguoiOHopDongsController(ApplicationDbContext context)
+        public NguoiOHopDongController(ApplicationDbContext context)
         {
             _context = context;
         }
 
+        // GET: Danh sách người ở
         public async Task<IActionResult> Index()
         {
-            var nguoiOHopDong = _context.NguoiOHopDong.Include(n => n.HopDongNavigation);
-            return View(await nguoiOHopDong.ToListAsync());
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
+            var nguoiO = await _context.NguoiOHopDong
+                .Include(n => n.KhachHangNavigation)
+                .ToListAsync();
+
+            return View(nguoiO);
         }
 
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var nguoiOHopDong = await _context.NguoiOHopDong
-                .Include(n => n.HopDongNavigation)
-                .FirstOrDefaultAsync(m => m.MaNguoiO == id);
-            if (nguoiOHopDong == null) return NotFound();
-
-            return View(nguoiOHopDong);
-        }
-
+        // GET: Thêm người ở
         public IActionResult Create()
         {
-            ViewData["MaHopDong"] = new SelectList(_context.HopDong, "MaHopDong", "MaHopDong");
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
+            ViewBag.KhachHangList = _context.KhachHang.ToList();
             return View();
         }
 
+        // POST: Thêm người ở
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("MaNguoiO,MaHopDong,HoTen,CCCD,SoDienThoai,LaNguoiDaiDien")] NguoiOHopDong nguoiOHopDong)
+        public async Task<IActionResult> Create(NguoiOHopDong nguoiO)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(nguoiOHopDong);
+                _context.NguoiOHopDong.Add(nguoiO);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Thêm người ở thành công!";
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MaHopDong"] = new SelectList(_context.HopDong, "MaHopDong", "MaHopDong", nguoiOHopDong.MaHopDong);
-            return View(nguoiOHopDong);
+
+            ViewBag.KhachHangList = _context.KhachHang.ToList();
+            return View(nguoiO);
         }
 
+        // GET: Sửa người ở
         public async Task<IActionResult> Edit(int? id)
         {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
             if (id == null) return NotFound();
 
-            var nguoiOHopDong = await _context.NguoiOHopDong.FindAsync(id);
-            if (nguoiOHopDong == null) return NotFound();
-            ViewData["MaHopDong"] = new SelectList(_context.HopDong, "MaHopDong", "MaHopDong", nguoiOHopDong.MaHopDong);
-            return View(nguoiOHopDong);
+            var nguoiO = await _context.NguoiOHopDong.FindAsync(id);
+            if (nguoiO == null) return NotFound();
+
+            ViewBag.KhachHangList = _context.KhachHang.ToList();
+            return View(nguoiO);
         }
 
+        // POST: Sửa người ở
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("MaNguoiO,MaHopDong,HoTen,CCCD,SoDienThoai,LaNguoiDaiDien")] NguoiOHopDong nguoiOHopDong)
+        public async Task<IActionResult> Edit(int id, NguoiOHopDong nguoiO)
         {
-            if (id != nguoiOHopDong.MaNguoiO) return NotFound();
+            if (id != nguoiO.MaNguoiO) return NotFound();
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(nguoiOHopDong);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!NguoiOHopDongExists(nguoiOHopDong.MaNguoiO)) return NotFound();
-                    else throw;
-                }
+                _context.Update(nguoiO);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Cập nhật người ở thành công!";
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MaHopDong"] = new SelectList(_context.HopDong, "MaHopDong", "MaHopDong", nguoiOHopDong.MaHopDong);
-            return View(nguoiOHopDong);
+
+            ViewBag.KhachHangList = _context.KhachHang.ToList();
+            return View(nguoiO);
         }
 
+        // GET: Xóa người ở
         public async Task<IActionResult> Delete(int? id)
         {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
             if (id == null) return NotFound();
 
-            var nguoiOHopDong = await _context.NguoiOHopDong
-                .Include(n => n.HopDongNavigation)
-                .FirstOrDefaultAsync(m => m.MaNguoiO == id);
-            if (nguoiOHopDong == null) return NotFound();
+            var nguoiO = await _context.NguoiOHopDong
+                .Include(n => n.KhachHangNavigation)
+                .FirstOrDefaultAsync(n => n.MaNguoiO == id);
 
-            return View(nguoiOHopDong);
+            if (nguoiO == null) return NotFound();
+
+            return View(nguoiO);
         }
 
+        // POST: Xóa người ở
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var nguoiOHopDong = await _context.NguoiOHopDong.FindAsync(id);
-            if (nguoiOHopDong != null)
+            var nguoiO = await _context.NguoiOHopDong.FindAsync(id);
+            if (nguoiO != null)
             {
-                _context.NguoiOHopDong.Remove(nguoiOHopDong);
+                _context.NguoiOHopDong.Remove(nguoiO);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Xóa người ở thành công!";
             }
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool NguoiOHopDongExists(int id)
+        // API: Lấy danh sách người ở theo khách hàng (dùng khi tạo hợp đồng)
+        [HttpGet]
+        public async Task<IActionResult> GetByKhachHang(int maKhachHang)
         {
-            return _context.NguoiOHopDong.Any(e => e.MaNguoiO == id);
+            var danhSach = await _context.NguoiOHopDong
+                .Where(n => n.MaKhachHang == maKhachHang)
+                .ToListAsync();
+
+            return Json(danhSach);
         }
     }
 }

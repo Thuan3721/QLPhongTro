@@ -1,27 +1,82 @@
 ﻿@{
-    ViewData["Title"] = "Tạo hợp đồng mới";
+    ViewData["Title"] = "Tạo hợp đồng thuê phòng";
     var phongList = ViewBag.PhongList as List<HeThongQuanLyPhongTro.Models.Phong>;
     var khachHangList = ViewBag.KhachHangList as List<HeThongQuanLyPhongTro.Models.KhachHang>;
 }
+<!-- Trong form tạo hợp đồng, thêm phần này -->
+<div class="mt-4">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Danh sách người ở</label>
+    <div id="danhSachNguoiO" class="border rounded-lg p-3 bg-gray-50">
+        <p class="text-gray-500 text-sm">Chọn khách hàng để hiển thị danh sách người ở</p>
+    </div>
+</div>
 
-<div class="max-w-3xl mx-auto">
+<script>
+    $('#maKhachHang').change(async function() {
+        var maKhachHang = $(this).val();
+        if (maKhachHang) {
+            const response = await fetch(`/NguoiOHopDong/GetByKhachHang?maKhachHang=${maKhachHang}`);
+            const data = await response.json();
+
+            if (data.length > 0) {
+                var html = '<table class="w-full text-sm">';
+                html += '<thead><tr><th>STT</th><th>Họ tên</th><th>CCCD</th><th>SĐT</th><th>Đại diện</th></tr></thead><tbody>';
+                data.forEach((item, index) => {
+                    html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${item.hoTen}</td>
+                        <td>${item.cccd || '---'}</td>
+                        <td>${item.soDienThoai || '---'}</td>
+                        <td>${item.laNguoiDaiDien ? '✅' : ''}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                $('#danhSachNguoiO').html(html);
+            } else {
+                $('#danhSachNguoiO').html('<p class="text-gray-500 text-sm">Chưa có người ở nào. Vui lòng thêm người ở trước khi tạo hợp đồng.</p>');
+            }
+        }
+    });
+</script>
+<script>
+    $('#maPhong').change(async function() {
+        var maPhong = $(this).val();
+        var ngayBatDau = $('#ngayBatDau').val();
+        var ngayKetThuc = $('#ngayKetThuc').val();
+
+        if (maPhong && ngayBatDau && ngayKetThuc) {
+            const response = await fetch(`/HopDong/KiemTraTrung?maPhong=${maPhong}&ngayBatDau=${ngayBatDau}&ngayKetThuc=${ngayKetThuc}`);
+            const data = await response.json();
+
+            if (data.isConflict) {
+                $('#errorMessage').text(data.message).show();
+                $('#submitBtn').prop('disabled', true);
+            } else {
+                $('#errorMessage').hide();
+                $('#submitBtn').prop('disabled', false);
+            }
+        }
+    });
+</script>
+
+<div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
             <h1 class="text-xl font-bold text-white">Tạo hợp đồng thuê phòng</h1>
-            <p class="text-blue-100 text-sm">Nhập thông tin hợp đồng mới</p>
+            <p class="text-blue-100">Hệ thống sẽ tự động xuất file PDF sau khi tạo</p>
         </div>
 
-        <form asp-action="Create" method="post" class="p-6 space-y-4">
+        <form method="post" class="p-6 space-y-4">
             @Html.AntiForgeryToken()
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn phòng <span class="text-red-500">*</span></label>
-                    <select name="maPhong" id="maPhong" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <label class="block text-sm font-medium text-gray-700">Chọn phòng trống</label>
+                    <select name="maPhong" id="maPhong" class="w-full px-3 py-2 border rounded-lg" required>
                         <option value="">-- Chọn phòng --</option>
                         @foreach (var phong in phongList ?? new List<HeThongQuanLyPhongTro.Models.Phong>())
                         {
-                            <option value="@phong.MaPhong" data-gia="@phong.GiaPhong" data-dientich="@phong.DienTich" data-coso="@phong.CoSo?.TenCoSo">
+                            <option value="@phong.MaPhong" data-gia="@phong.GiaPhong">
                                 @phong.TenPhong - @phong.CoSo?.TenCoSo - @phong.GiaPhong.ToString("N0") đ/tháng
                             </option>
                         }
@@ -29,9 +84,9 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn khách hàng <span class="text-red-500">*</span></label>
-                    <select name="maKhachHang" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        <option value="">-- Chọn khách hàng --</option>
+                    <label class="block text-sm font-medium text-gray-700">Chọn khách hàng</label>
+                    <select name="maKhachHang" class="w-full px-3 py-2 border rounded-lg" required>
+                        <option value="">-- Chọn khách --</option>
                         @foreach (var khach in khachHangList ?? new List<HeThongQuanLyPhongTro.Models.KhachHang>())
                         {
                             <option value="@khach.MaKhachHang">@khach.HoTen - @khach.SoDienThoai</option>
@@ -40,57 +95,55 @@
                 </div>
             </div>
 
-            <div id="phongInfo" class="bg-blue-50 p-4 rounded-lg hidden">
-                <h4 class="font-semibold text-blue-800 mb-2">Thông tin phòng</h4>
-                <div class="grid grid-cols-3 gap-4 text-sm">
-                    <div><span class="text-gray-600">Giá phòng:</span> <span id="giaPhong" class="font-semibold text-blue-600"></span></div>
-                    <div><span class="text-gray-600">Diện tích:</span> <span id="dienTich"></span></div>
-                    <div><span class="text-gray-600">Cơ sở:</span> <span id="tenCoSo"></span></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày bắt đầu <span class="text-red-500">*</span></label>
-                    <input type="date" name="ngayBatDau" value="@DateTime.Now.ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border rounded-lg" required />
+                    <label class="block text-sm font-medium text-gray-700">Ngày bắt đầu</label>
+                    <input type="date" name="ngayBatDau" class="w-full px-3 py-2 border rounded-lg" required />
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Ngày kết thúc <span class="text-red-500">*</span></label>
-                    <input type="date" name="ngayKetThuc" value="@DateTime.Now.AddMonths(6).ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border rounded-lg" required />
+                    <label class="block text-sm font-medium text-gray-700">Ngày kết thúc</label>
+                    <input type="date" name="ngayKetThuc" class="w-full px-3 py-2 border rounded-lg" required />
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Tiền cọc (VNĐ) <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700">Tiền cọc (VNĐ)</label>
                 <input type="number" name="tienCoc" class="w-full px-3 py-2 border rounded-lg" placeholder="Nhập số tiền cọc" required />
-                <p class="text-xs text-gray-500 mt-1">Thông thường = 1-3 tháng tiền phòng</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Người lập hợp đồng</label>
+                    <input type="text" name="nguoiLap" class="w-full px-3 py-2 border rounded-lg" value="Trần Đức Sương" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Ngày ký hợp đồng</label>
+                    <input type="text" name="ngayKy" class="w-full px-3 py-2 border rounded-lg" placeholder="VD: 15/05/2024" required />
+                </div>
+            </div>
+
+            <div class="bg-yellow-50 p-4 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-yellow-500 mt-1 mr-3"></i>
+                    <div>
+                        <p class="font-semibold text-yellow-800">Lưu ý quy trình:</p>
+                        <ul class="text-sm text-yellow-700 list-disc list-inside mt-1 space-y-1">
+                            <li>Sau khi tạo, hệ thống sẽ tự động xuất file PDF</li>
+                            <li>Tải file PDF về máy để in thành 2 bản giấy trắng mực đen</li>
+                            <li>Hai bên ký tay trực tiếp vào hợp đồng giấy</li>
+                            <li>Mỗi bên giữ 01 bản giấy, hệ thống lưu bản mềm</li>
+                            <li>Admin và Khách đều có thể xem bản mềm trên hệ thống</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-end space-x-3 pt-4">
-                <a asp-action="Index" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Hủy</a>
+                <a asp-action="Index" class="px-4 py-2 border rounded-lg">Hủy</a>
                 <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                    <i class="fas fa-save mr-2"></i> Tạo hợp đồng
+                    <i class="fas fa-file-pdf mr-2"></i> Tạo hợp đồng & Xuất PDF
                 </button>
             </div>
         </form>
     </div>
 </div>
-
-<script>
-    document.getElementById('maPhong').addEventListener('change', function() {
-        var selected = this.options[this.selectedIndex];
-        var gia = selected.getAttribute('data-gia');
-        var dientich = selected.getAttribute('data-dientich');
-        var coso = selected.getAttribute('data-coso');
-
-        if (gia) {
-            document.getElementById('phongInfo').classList.remove('hidden');
-            document.getElementById('giaPhong').innerText = new Intl.NumberFormat('vi-VN').format(gia) + ' đ/tháng';
-            document.getElementById('dienTich').innerText = dientich + ' m²';
-            document.getElementById('tenCoSo').innerText = coso;
-        } else {
-            document.getElementById('phongInfo').classList.add('hidden');
-        }
-    });
-</script>

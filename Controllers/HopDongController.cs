@@ -1,5 +1,6 @@
 ﻿using HeThongQuanLyPhongTro.Data;
 using HeThongQuanLyPhongTro.Models;
+using HeThongQuanLyPhongTro.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,58 +9,44 @@ namespace HeThongQuanLyPhongTro.Controllers
     public class HopDongController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly PdfHopDongService _pdfService;
 
-        public HopDongController(ApplicationDbContext context)
+        public HopDongController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
+            _pdfService = new PdfHopDongService(webHostEnvironment);
         }
 
         // GET: Danh sách hợp đồng
-        public async Task<IActionResult> Index(string searchString, string trangThai)
+        public async Task<IActionResult> Index()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
-            {
                 return RedirectToAction("Index", "Login");
-            }
 
-            var hopDongs = _context.HopDong
+            var hopDongs = await _context.HopDong
                 .Include(h => h.PhongNavigation)
+                .ThenInclude(p => p.CoSo)
                 .Include(h => h.KhachHangNavigation)
-                .AsQueryable();
+                .OrderByDescending(h => h.MaHopDong)
+                .ToListAsync();
 
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                hopDongs = hopDongs.Where(h =>
-                    (h.PhongNavigation != null && h.PhongNavigation.TenPhong.Contains(searchString)) ||
-                    (h.KhachHangNavigation != null && h.KhachHangNavigation.HoTen.Contains(searchString)));
-            }
-
-            if (!string.IsNullOrEmpty(trangThai) && trangThai != "Tất cả")
-            {
-                hopDongs = hopDongs.Where(h => h.TrangThai == trangThai);
-            }
-
-            ViewBag.SearchString = searchString;
-            ViewBag.TrangThai = trangThai;
-            ViewBag.TrangThaiList = new List<string> { "Tất cả", "Hiệu lực", "Hết hạn", "Đã hủy" };
-
-            return View(await hopDongs.ToListAsync());
+            return View(hopDongs);
         }
 
         // GET: Tạo hợp đồng mới
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
-            {
                 return RedirectToAction("Index", "Login");
-            }
 
-            ViewBag.PhongList = _context.Phong
+            ViewBag.PhongList = await _context.Phong
                 .Include(p => p.CoSo)
                 .Where(p => p.TrangThai == "Trống")
-                .ToList();
+                .ToListAsync();
 
-            ViewBag.KhachHangList = _context.KhachHang.ToList();
+            ViewBag.KhachHangList = await _context.KhachHang.ToListAsync();
 
             return View();
         }
@@ -67,28 +54,61 @@ namespace HeThongQuanLyPhongTro.Controllers
         // POST: Tạo hợp đồng mới
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(int maPhong, int maKhachHang, DateTime ngayBatDau, DateTime ngayKetThuc, decimal tienCoc)
+        public async Task<IActionResult> Create(int maPhong, int maKhachHang,
+            DateTime ngayBatDau, DateTime ngayKetThuc, decimal tienCoc, string ngayKy)
         {
-            // Kiểm tra phòng còn trống không
+            // 1. Kiểm tra phòng tồn tại
             var phong = await _context.Phong.FindAsync(maPhong);
-            if (phong == null || phong.TrangThai != "Trống")
+            if (phong == null)
             {
-                TempData["Error"] = "Phòng này đã được thuê hoặc không tồn tại!";
-                ViewBag.PhongList = _context.Phong.Where(p => p.TrangThai == "Trống").Include(p => p.CoSo).ToList();
-                ViewBag.KhachHangList = _context.KhachHang.ToList();
+                TempData["Error"] = "Phòng không tồn tại!";
+                return RedirectToAction("Create");
+            }
+
+            // 2. Kiểm tra phòng còn trống không
+            if (phong.TrangThai != "Trống")
+            {
+                TempData["Error"] = "Phòng này đã được thuê!";
+                ViewBag.PhongList = await _context.Phong.Where(p => p.TrangThai == "Trống").Include(p => p.CoSo).ToListAsync();
+                ViewBag.KhachHangList = await _context.KhachHang.ToListAsync();
                 return View();
             }
 
-            // Kiểm tra ngày hợp lệ
+            // 3. KIỂM TRA TRÙNG LẶP HỢP ĐỒNG
+            var hopDongTrung = await _context.HopDong
+                .Where(h => h.MaPhong == maPhong && h.TrangThai == "Hiệu lực")
+                .AnyAsync(h =>
+                    (ngayBatDau >= h.NgayBatDau && ngayBatDau <= h.NgayKetThuc) ||
+                    (ngayKetThuc >= h.NgayBatDau && ngayKetThuc <= h.NgayKetThuc) ||
+                    (ngayBatDau <= h.NgayBatDau && ngayKetThuc >= h.NgayKetThuc)
+                );
+
+            if (hopDongTrung)
+            {
+                TempData["Error"] = "Phòng này đã có hợp đồng trong thời gian này! Không thể tạo hợp đồng chồng chéo.";
+                ViewBag.PhongList = await _context.Phong.Where(p => p.TrangThai == "Trống").Include(p => p.CoSo).ToListAsync();
+                ViewBag.KhachHangList = await _context.KhachHang.ToListAsync();
+                return View();
+            }
+
+            // 4. Kiểm tra ngày hợp lệ
             if (ngayKetThuc <= ngayBatDau)
             {
                 TempData["Error"] = "Ngày kết thúc phải sau ngày bắt đầu!";
-                ViewBag.PhongList = _context.Phong.Where(p => p.TrangThai == "Trống").Include(p => p.CoSo).ToList();
-                ViewBag.KhachHangList = _context.KhachHang.ToList();
+                ViewBag.PhongList = await _context.Phong.Where(p => p.TrangThai == "Trống").Include(p => p.CoSo).ToListAsync();
+                ViewBag.KhachHangList = await _context.KhachHang.ToListAsync();
                 return View();
             }
 
-            // Tạo hợp đồng mới
+            // 5. Lấy danh sách người ở đã thêm trước đó (liên kết với khách hàng)
+            var danhSachNguoiO = await _context.NguoiOHopDong
+                .Where(n => n.MaKhachHang == maKhachHang)
+                .ToListAsync();
+
+            // 6. Tạo hợp đồng mới
+            var khachHang = await _context.KhachHang.FindAsync(maKhachHang);
+            var coSo = await _context.CoSo.FindAsync(phong.MaCoSo);
+
             var hopDong = new HopDong
             {
                 MaPhong = maPhong,
@@ -100,58 +120,93 @@ namespace HeThongQuanLyPhongTro.Controllers
             };
 
             _context.HopDong.Add(hopDong);
+            await _context.SaveChangesAsync();
 
-            // Cập nhật trạng thái phòng thành Đã thuê
+            // 7. Cập nhật MaHopDong cho các người ở
+            foreach (var nguoi in danhSachNguoiO)
+            {
+                nguoi.MaHopDong = hopDong.MaHopDong;
+                _context.Update(nguoi);
+            }
+            await _context.SaveChangesAsync();
+
+            // 8. Xuất PDF (có danh sách người ở)
+            string pdfPath = await _pdfService.XuatHopDongPdf(hopDong, khachHang, phong, coSo, ngayKy, danhSachNguoiO);
+            hopDong.FileHopDong = pdfPath;
+            _context.Update(hopDong);
+
+            // 9. Cập nhật trạng thái phòng
             phong.TrangThai = "Đã thuê";
             _context.Update(phong);
 
-            // Ghi vào lịch sử thuê phòng (nếu có bảng LichSuThuePhong)
-            // _context.LichSuThuePhongs.Add(...);
-
             await _context.SaveChangesAsync();
 
-            // Tạo hóa đơn cho các tháng
-            await TaoHoaDonChoHopDong(hopDong.MaHopDong, phong.GiaPhong, ngayBatDau, ngayKetThuc);
-
-            TempData["Success"] = "Tạo hợp đồng thành công!";
+            TempData["Success"] = $"Tạo hợp đồng thành công! Số hợp đồng: {hopDong.MaHopDong}";
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Chi tiết hợp đồng
+        // Xem PDF trên hệ thống
+        public async Task<IActionResult> XemPdf(int id)
+        {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
+            var hopDong = await _context.HopDong.FindAsync(id);
+            if (hopDong == null || string.IsNullOrEmpty(hopDong.FileHopDong))
+            {
+                TempData["Error"] = "Hợp đồng chưa có file PDF!";
+                return RedirectToAction("Details", new { id });
+            }
+
+            string filePath = Path.Combine(_webHostEnvironment.WebRootPath, hopDong.FileHopDong.TrimStart('/'));
+            if (!System.IO.File.Exists(filePath))
+            {
+                TempData["Error"] = "File PDF không tồn tại!";
+                return RedirectToAction("Details", new { id });
+            }
+
+            return PhysicalFile(filePath, "application/pdf");
+        }
+
+        // Tải PDF về máy
+        public async Task<IActionResult> TaiPdf(int id)
+        {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Index", "Login");
+
+            var hopDong = await _context.HopDong.FindAsync(id);
+            if (hopDong == null || string.IsNullOrEmpty(hopDong.FileHopDong))
+                return NotFound();
+
+            string filePath = Path.Combine(_webHostEnvironment.WebRootPath, hopDong.FileHopDong.TrimStart('/'));
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/pdf", $"HopDong_{hopDong.MaHopDong}.pdf");
+        }
+
+        // Chi tiết hợp đồng
         public async Task<IActionResult> Details(int? id)
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
-            {
                 return RedirectToAction("Index", "Login");
-            }
 
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var hopDong = await _context.HopDong
                 .Include(h => h.PhongNavigation)
                 .ThenInclude(p => p.CoSo)
                 .Include(h => h.KhachHangNavigation)
+                .Include(h => h.NguoiOHopDongNavigation) // Lấy danh sách người ở
                 .FirstOrDefaultAsync(m => m.MaHopDong == id);
 
-            if (hopDong == null)
-            {
-                return NotFound();
-            }
+            if (hopDong == null) return NotFound();
 
-            var hoaDons = await _context.HoaDon
-                .Where(h => h.MaHopDong == id)
-                .OrderByDescending(h => h.Nam)
-                .ThenByDescending(h => h.Thang)
-                .ToListAsync();
-
-            ViewBag.HoaDons = hoaDons;
             return View(hopDong);
         }
 
-        // POST: Chấm dứt hợp đồng
+        // Chấm dứt hợp đồng
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChamDut(int id)
@@ -165,7 +220,7 @@ namespace HeThongQuanLyPhongTro.Controllers
                 return NotFound();
             }
 
-            // Cập nhật trạng thái hợp đồng
+            // Chuyển trạng thái thành "Đã hủy"
             hopDong.TrangThai = "Đã hủy";
             _context.Update(hopDong);
 
@@ -178,66 +233,53 @@ namespace HeThongQuanLyPhongTro.Controllers
             }
 
             await _context.SaveChangesAsync();
-            TempData["Success"] = "Đã chấm dứt hợp đồng!";
+
+            TempData["Success"] = "Đã chấm dứt hợp đồng! Phòng đã trống, có thể tạo hợp đồng mới.";
             return RedirectToAction(nameof(Index));
         }
 
-        // Tạo hóa đơn tự động cho hợp đồng
-        private async Task TaoHoaDonChoHopDong(int maHopDong, decimal giaPhong, DateTime ngayBatDau, DateTime ngayKetThuc)
+        // Gia hạn hợp đồng
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GiaHan(int id, DateTime ngayKetThucMoi)
         {
-            int currentMonth = ngayBatDau.Month;
-            int currentYear = ngayBatDau.Year;
-            int endMonth = ngayKetThuc.Month;
-            int endYear = ngayKetThuc.Year;
-
-            while (currentYear < endYear || (currentYear == endYear && currentMonth <= endMonth))
+            var hopDong = await _context.HopDong.FindAsync(id);
+            if (hopDong == null)
             {
-                var existingHoaDon = await _context.HoaDon
-                    .AnyAsync(h => h.MaHopDong == maHopDong && h.Thang == currentMonth && h.Nam == currentYear);
-
-                if (!existingHoaDon)
-                {
-                    var hoaDon = new HoaDon
-                    {
-                        MaHopDong = maHopDong,
-                        Thang = currentMonth,
-                        Nam = currentYear,
-                        TongTien = giaPhong,
-                        TrangThai = "Chưa thanh toán",
-                        NgayTao = DateTime.Now
-                    };
-                    _context.HoaDon.Add(hoaDon);
-                }
-
-                currentMonth++;
-                if (currentMonth > 12)
-                {
-                    currentMonth = 1;
-                    currentYear++;
-                }
+                return NotFound();
             }
 
+            if (ngayKetThucMoi <= hopDong.NgayKetThuc)
+            {
+                TempData["Error"] = "Ngày kết thúc mới phải sau ngày kết thúc hiện tại!";
+                return RedirectToAction("Details", new { id });
+            }
+
+            hopDong.NgayKetThuc = ngayKetThucMoi;
+            _context.Update(hopDong);
             await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Đã gia hạn hợp đồng đến ngày {ngayKetThucMoi:dd/MM/yyyy}";
+            return RedirectToAction(nameof(Index));
         }
 
-        // API: Lấy thông tin phòng
+        // API kiểm tra trùng hợp đồng
         [HttpGet]
-        public async Task<IActionResult> GetPhongInfo(int maPhong)
+        public async Task<IActionResult> KiemTraTrung(int maPhong, DateTime ngayBatDau, DateTime ngayKetThuc)
         {
-            var phong = await _context.Phong
-                .Include(p => p.CoSo)
-                .FirstOrDefaultAsync(p => p.MaPhong == maPhong);
+            var isConflict = await _context.HopDong
+                .Where(h => h.MaPhong == maPhong && h.TrangThai == "Hiệu lực")
+                .AnyAsync(h =>
+                    (ngayBatDau >= h.NgayBatDau && ngayBatDau <= h.NgayKetThuc) ||
+                    (ngayKetThuc >= h.NgayBatDau && ngayKetThuc <= h.NgayKetThuc) ||
+                    (ngayBatDau <= h.NgayBatDau && ngayKetThuc >= h.NgayKetThuc)
+                );
 
-            if (phong == null)
-                return Json(new { success = false });
-
-            return Json(new
+            if (isConflict)
             {
-                success = true,
-                giaPhong = phong.GiaPhong,
-                dienTich = phong.DienTich,
-                tenCoSo = phong.CoSo?.TenCoSo
-            });
+                return Json(new { isConflict = true, message = "Phòng đã có hợp đồng trong thời gian này!" });
+            }
+            return Json(new { isConflict = false });
         }
     }
 }

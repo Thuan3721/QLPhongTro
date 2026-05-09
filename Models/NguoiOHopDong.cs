@@ -8,9 +8,12 @@ namespace HeThongQuanLyPhongTro.Models
         [Key]
         public int MaNguoiO { get; set; }
 
-        public int MaHopDong { get; set; }
+        public int MaKhachHang { get; set; }  // 🔑 Liên kết với khách hàng
 
-        public string? HoTen { get; set; }
+        public int? MaHopDong { get; set; }   // Liên kết với hợp đồng (sau khi tạo)
+
+        [Required(ErrorMessage = "Họ tên không được để trống")]
+        public string HoTen { get; set; } = string.Empty;
 
         public string? CCCD { get; set; }
 
@@ -18,7 +21,9 @@ namespace HeThongQuanLyPhongTro.Models
 
         public bool? LaNguoiDaiDien { get; set; } = false;
 
-        // Thêm navigation property này
+        [ForeignKey("MaKhachHang")]
+        public virtual KhachHang? KhachHangNavigation { get; set; }
+
         [ForeignKey("MaHopDong")]
         public virtual HopDong? HopDongNavigation { get; set; }
     }
