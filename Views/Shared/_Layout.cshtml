@@ -154,12 +154,58 @@
                             <p class="text-sm text-gray-500 mt-1">Chào mừng bạn trở lại, @username</p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <div class="relative">
-                                <button class="text-gray-400 hover:text-gray-600">
+                            <details class="relative notif">
+                                <summary id="notifBtn" class="list-none text-gray-400 hover:text-gray-600 relative cursor-pointer select-none">
                                     <i class="fas fa-bell text-xl"></i>
                                     <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
-                                </button>
-                            </div>
+                                </summary>
+                                <div id="notifDropdown" class="notifDropdown absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                                    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                        <p class="text-sm font-semibold text-gray-800">Thông báo</p>
+                                        <button id="notifMarkAllBtn" type="button" class="text-xs text-blue-600 hover:text-blue-700">Đánh dấu đã đọc</button>
+                                    </div>
+                                    <div class="max-h-80 overflow-y-auto">
+                                        <a href="@Url.Action("Index","HopDong")" class="block px-4 py-3 hover:bg-gray-50 transition">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-clock text-orange-500"></i>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm text-gray-800 font-medium">Hợp đồng sắp hết hạn</p>
+                                                    <p class="text-xs text-gray-500 mt-0.5">Kiểm tra danh sách hợp đồng sắp hết hạn.</p>
+                                                </div>
+                                                <span class="w-2 h-2 mt-1.5 rounded-full bg-blue-500 shrink-0" title="Chưa đọc"></span>
+                                            </div>
+                                        </a>
+                                        <a href="@Url.Action("Index","ThanhToans")" class="block px-4 py-3 hover:bg-gray-50 transition">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-money-bill-wave text-green-600"></i>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm text-gray-800 font-medium">Có thanh toán mới</p>
+                                                    <p class="text-xs text-gray-500 mt-0.5">Xem các giao dịch thanh toán gần đây.</p>
+                                                </div>
+                                                <span class="w-2 h-2 mt-1.5 rounded-full bg-blue-500 shrink-0" title="Chưa đọc"></span>
+                                            </div>
+                                        </a>
+                                        <a href="@Url.Action("Index","BaiDang")" class="block px-4 py-3 hover:bg-gray-50 transition">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-newspaper text-indigo-600"></i>
+                                                </div>
+                                                <div class="flex-1">
+                                                    <p class="text-sm text-gray-800 font-medium">Bài đăng gần đây</p>
+                                                    <p class="text-xs text-gray-500 mt-0.5">Có cập nhật mới trong mục bài đăng.</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
+                                        <a href="@Url.Action("Index","Dashboard")" class="text-xs text-gray-600 hover:text-gray-800">Xem tất cả</a>
+                                    </div>
+                                </div>
+                            </details>
                             <div class="flex items-center space-x-2">
                                 <div class="w-9 h-9 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white shadow-md">
                                     <i class="fas fa-user text-sm"></i>
@@ -217,6 +263,30 @@
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        details.notif > summary::-webkit-details-marker { display: none; }
+        details.notif .notifDropdown { display: none; }
+        details.notif[open] .notifDropdown { display: block; }
+    </style>
+    <script>
+        (function () {
+            const btn = document.getElementById('notifBtn');
+            const dd = document.getElementById('notifDropdown');
+            const markAllBtn = document.getElementById('notifMarkAllBtn');
+
+            if (!btn || !dd) return;
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dd.querySelectorAll('[title="Chưa đọc"]').forEach(function (dot) { dot.remove(); });
+                    const badge = btn.querySelector('span');
+                    if (badge) badge.remove();
+                });
+            }
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>

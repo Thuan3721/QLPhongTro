@@ -2,34 +2,73 @@
 
 @{
     ViewData["Title"] = "Quản lý thiết bị cơ sở vật chất";
-    Layout = null;
 }
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"]</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-gray-100">
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="flex items-center justify-between bg-white px-6 py-4 border-b">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Quản lý thiết bị</h1>
+                <p class="text-gray-500 text-sm">Danh sách thiết bị cơ sở vật chất trong phòng</p>
+            </div>
 
-    <div class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold text-white">Quản lý thiết bị</h1>
-                    <p class="text-blue-100 text-sm">Danh sách thiết bị cơ sở vật chất trong phòng</p>
-                </div>
-                <a asp-action="Create" class="bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-all">
+            <!-- Custom right-side menu with working filter -->
+            <div class="flex items-center space-x-3">
+                <form method="get" asp-action="Index" class="flex items-center space-x-2">
+                    <select name="phongId" class="px-3 py-2 border rounded-lg bg-white text-sm">
+                        <option value="">-- Chọn phòng --</option>
+                        @{
+                            var list = ViewData["MaPhong"] as SelectList;
+                            if (list != null)
+                            {
+                                foreach (var p in list)
+                                {
+                                    var val = p.Value?.ToString();
+                                    if (ViewBag.SelectedPhong != null && ViewBag.SelectedPhong.ToString() == val)
+                                    {
+                                        <option value="@val" selected>@p.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@val">@p.Text</option>
+                                    }
+                                }
+                            }
+                        }
+                    </select>
+
+                    <select name="tinhTrang" class="px-3 py-2 border rounded-lg bg-white text-sm">
+                        <option value="">-- Tình trạng --</option>
+                        @if (ViewBag.SelectedTinhTrang == "Tốt")
+                        {
+                            <option value="Tốt" selected>Tốt</option>
+                        }
+                        else
+                        {
+                            <option value="Tốt">Tốt</option>
+                        }
+
+                        @if (ViewBag.SelectedTinhTrang == "Hư")
+                        {
+                            <option value="Hư" selected>Hư</option>
+                        }
+                        else
+                        {
+                            <option value="Hư">Hư</option>
+                        }
+                    </select>
+
+                    <button type="submit" class="px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-700 hover:bg-gray-200">Áp dụng</button>
+                    <a asp-action="Index" class="px-3 py-2 bg-white rounded-lg text-sm text-gray-700 border">Đặt lại</a>
+                </form>
+
+                <a asp-action="Create" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all">
                     <i class="fas fa-plus mr-2"></i> Thêm thiết bị
                 </a>
             </div>
+        </div>
 
-            <div class="p-6">
+        <div class="p-6">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50">
@@ -100,6 +139,4 @@
             </div>
         </div>
     </div>
-
-</body>
-</html>
+</div>

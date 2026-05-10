@@ -21,6 +21,7 @@
 
     public class HopDongSapHetHan
     {
+        public int MaHopDong { get; set; }
         public string TenPhong { get; set; } = string.Empty;
         public string TenKhachHang { get; set; } = string.Empty;
         public DateTime NgayKetThuc { get; set; }

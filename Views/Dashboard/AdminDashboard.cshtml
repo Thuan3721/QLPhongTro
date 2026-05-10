@@ -12,6 +12,43 @@
                     <p class="text-gray-500 text-sm">Tổng số phòng</p>
                     <p class="text-3xl font-bold text-gray-800">@Model.TongSoPhong</p>
                 </div>
+<!-- Modal for post details -->
+<div id="postModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-11/12 md:w-3/4 lg:w-1/2 overflow-hidden">
+        <div class="flex justify-between items-center px-4 py-3 border-b">
+            <h3 class="font-semibold">Chi tiết bài đăng</h3>
+            <button onclick="closePostModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <div id="postModalBody" class="p-4 max-h-[70vh] overflow-y-auto">
+            <!-- Nội dung sẽ được load bằng AJAX -->
+            <div class="text-center text-gray-500">Đang tải...</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openPostModal(id) {
+            var modal = document.getElementById('postModal');
+            var body = document.getElementById('postModalBody');
+            modal.classList.remove('hidden');
+            body.innerHTML = '<div class="text-center text-gray-500">Đang tải...</div>';
+
+            fetch('/BaiDang/DetailsPartial?id=' + id)
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    body.innerHTML = html;
+                })
+                .catch(function () {
+                    body.innerHTML = '<div class="text-red-500">Không thể tải nội dung.</div>';
+                });
+        }
+
+        function closePostModal() {
+            document.getElementById('postModal').classList.add('hidden');
+        }
+    </script>
+}
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                     <i class="fas fa-building text-blue-500 text-xl"></i>
                 </div>
@@ -76,7 +113,7 @@
                     <tbody>
                         @foreach (var item in Model.HopDongSapHetHanList)
                         {
-                            <tr class="border-b">
+                            <tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="location.href='@Url.Action("Details", "HopDong", new { id = item.MaHopDong })'">
                                 <td class="px-4 py-2">@item.TenPhong</td>
                                 <td class="px-4 py-2">@item.TenKhachHang</td>
                                 <td class="px-4 py-2">@item.NgayKetThuc.ToString("dd/MM/yyyy")</td>
@@ -172,33 +209,33 @@
                 <tbody class="divide-y divide-gray-200">
                     @foreach (var item in Model.BaiDangGanDayList)
                     {
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-2">
-                                <span class="font-medium line-clamp-1 max-w-md">@item.TieuDe</span>
-                            </td>
-                            <td class="px-4 py-2">@item.TenPhong</td>
-                            <td class="px-4 py-2">@item.NgayDang.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="px-4 py-2 text-center">
-                                @if (item.TrangThai == "Hiển thị")
-                                {
-                                    <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                                        <i class="fas fa-eye"></i> Hiển thị
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
-                                        <i class="fas fa-eye-slash"></i> Ẩn
-                                    </span>
-                                }
-                            </td>
-                            <td class="px-4 py-2 text-center">
-                                <a asp-controller="BaiDang" asp-action="Details" asp-route-id="@item.MaBaiDang"
-                                   class="text-blue-500 hover:text-blue-700" title="Xem chi tiết">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </td>
-                        </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-2">
+                                        <a href="#" class="font-medium line-clamp-1 max-w-md text-blue-600" onclick="openPostModal(@item.MaBaiDang); return false;">@item.TieuDe</a>
+                                    </td>
+                                    <td class="px-4 py-2">@item.TenPhong</td>
+                                    <td class="px-4 py-2">@item.NgayDang.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td class="px-4 py-2 text-center">
+                                        @if (item.TrangThai == "Hiển thị")
+                                        {
+                                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                                <i class="fas fa-eye"></i> Hiển thị
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                                                <i class="fas fa-eye-slash"></i> Ẩn
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <a asp-controller="BaiDang" asp-action="Details" asp-route-id="@item.MaBaiDang"
+                                           class="text-blue-500 hover:text-blue-700" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
                     }
                 </tbody>
             </table>

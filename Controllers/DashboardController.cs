@@ -56,6 +56,7 @@ namespace HeThongQuanLyPhongTro.Controllers
                 model.SoHopDongSapHetHan = hopDongSapHetHan.Count;
                 model.HopDongSapHetHanList = hopDongSapHetHan.Select(h => new HopDongSapHetHan
                 {
+                    MaHopDong = h.MaHopDong,
                     TenPhong = h.PhongNavigation?.TenPhong ?? "N/A",
                     TenKhachHang = h.KhachHangNavigation?.HoTen ?? "N/A",
                     NgayKetThuc = h.NgayKetThuc ?? DateTime.Now,
