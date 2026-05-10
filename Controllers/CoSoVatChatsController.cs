@@ -20,10 +20,27 @@ namespace HeThongQuanLyPhongTro.Controllers
         }
 
         // GET: CoSoVatChats
-        public async Task<IActionResult> Index()
+        // Accept optional filter parameters via query string
+        public async Task<IActionResult> Index(int? phongId, string tinhTrang)
         {
-            var coSoVatChats = _context.CoSoVatChat.Include(c => c.PhongNavigation);
-            return View(await coSoVatChats.ToListAsync());
+            var query = _context.CoSoVatChat.Include(c => c.PhongNavigation).AsQueryable();
+
+            if (phongId.HasValue)
+            {
+                query = query.Where(c => c.MaPhong == phongId.Value);
+            }
+
+            if (!string.IsNullOrEmpty(tinhTrang))
+            {
+                query = query.Where(c => c.TinhTrang == tinhTrang);
+            }
+
+            // Provide list of rooms for filter select
+            ViewData["MaPhong"] = new SelectList(_context.Phong.OrderBy(p => p.TenPhong), "MaPhong", "TenPhong");
+            ViewBag.SelectedPhong = phongId;
+            ViewBag.SelectedTinhTrang = tinhTrang;
+
+            return View(await query.ToListAsync());
         }
 
         // GET: CoSoVatChats/Details/5

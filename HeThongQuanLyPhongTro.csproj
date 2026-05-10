@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!--
+      Disable generating native apphost executable to avoid file-lock issues during incremental builds
+      (workaround for development machines where the exe may be held by a running process).
+      Remove or set to true for publishing a self-contained app.
+    -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

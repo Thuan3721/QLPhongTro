@@ -76,6 +76,28 @@ namespace HeThongQuanLyPhongTro.Controllers
             return View(baiDang);
         }
 
+        // GET: Partial details for modal (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> DetailsPartial(int id)
+        {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+            {
+                return Unauthorized();
+            }
+
+            var baiDang = await _context.BaiDang
+                .Include(b => b.PhongNavigation)
+                .ThenInclude(p => p.CoSo)
+                .FirstOrDefaultAsync(m => m.MaBaiDang == id);
+
+            if (baiDang == null)
+            {
+                return NotFound();
+            }
+
+            return PartialView("_DetailsPartial", baiDang);
+        }
+
         // GET: Tạo bài đăng mới
         public IActionResult Create()
         {

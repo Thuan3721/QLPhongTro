@@ -13,6 +13,7 @@ wwwroot\images\baiDang\bd_639132443013702908.jpg
 wwwroot\images\baiDang\bd_639132443633443400.jpg
 wwwroot\images\baiDang\bd_639132444279488937.jpg
 wwwroot\images\baiDang\bd_639132444705189231.jpg
+wwwroot\images\baiDang\bd_639137453824421246.jpg
 wwwroot\images\phongs.cs
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css

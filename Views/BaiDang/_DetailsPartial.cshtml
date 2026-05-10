@@ -1,0 +1,27 @@
+@model HeThongQuanLyPhongTro.Models.BaiDang
+
+<div>
+    @if (!string.IsNullOrEmpty(Model.HinhAnh))
+    {
+        <div class="mb-4">
+            <img src="@Model.HinhAnh" alt="@Model.TieuDe" class="w-full rounded-lg object-cover max-h-80" />
+        </div>
+    }
+
+    <div class="mb-3">
+        <h4 class="font-semibold text-lg">@Model.TieuDe</h4>
+        <p class="text-sm text-gray-500">Phòng: @Model.PhongNavigation?.TenPhong - Cơ sở: @Model.PhongNavigation?.CoSo?.TenCoSo</p>
+    </div>
+
+    <div class="bg-gray-50 rounded p-3 mb-3">
+        <p><strong>Ngày đăng:</strong> @Model.NgayDang?.ToString("dd/MM/yyyy HH:mm")</p>
+        <p><strong>Trạng thái:</strong> @Model.TrangThai</p>
+        <p><strong>Giá:</strong> @Model.PhongNavigation?.GiaPhong.ToString("N0") đ/tháng</p>
+        <p><strong>Diện tích:</strong> @Model.PhongNavigation?.DienTich m²</p>
+    </div>
+
+    <div>
+        <h5 class="font-medium mb-2">Mô tả</h5>
+        <div class="whitespace-pre-line">@Model.MoTa</div>
+    </div>
+</div>
